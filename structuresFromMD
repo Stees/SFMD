@@ -1,0 +1,47 @@
+#! /usr/bin/env python
+#code will take each Nth (user specified) structure out of a cp2k -pos- file and create separate xyz files for the structures in a hard-coded input directory.
+import subprocess
+
+#read the number of atoms out of the pos file
+getAtoms = subprocess.Popen('head -n 1 *-pos-* | sed "s/^ *//g"', stdout=subprocess.PIPE, shell=True)
+atoms = int(getAtoms.communicate()[0].split()[0])
+
+#get the name of the structure pair from the -pos- file
+getStructure = subprocess.Popen('ls *-pos-*', stdout=subprocess.PIPE, shell=True)
+filename = getStructure.communicate()[0].split()[0]
+structure = filename.rsplit('_',1)[0]
+#determine if there are any structures in the input directory with the same name that have not yet been optimized, use this in setting the start number of the structures
+checkForStructures = subprocess.Popen('ls {0}*'.format(structure), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd='/ihome/kjohnson/jpr54/cp2k/structureInputs/', shell=True)
+structuresExist = checkForStructures.communicate()[0].splitlines()
+startNum = 1
+if 'ls: cannot access' not in structuresExist[0]:
+    #get the maximum number of the structures
+    for line in structuresExist:
+        if int(line.rsplit('_',1)[1].split('.')[0]) > startNum:
+            startNum = int(line.rsplit('_',1)[1].split('.')[0])
+    startNum = startNum + 1
+
+#read all the lines of the -pos- file
+posFile = open(filename, 'r')
+lines = posFile.readlines()
+posFile.close()
+
+totalNumLines = len(lines)
+print('{0}'.format(totalNumLines))
+
+#number of lines to read?
+fileLines = atoms + 2
+
+#loop through the lines, writing a structure file for each fileLines lines
+outCount = 0
+while outCount < totalNumLines:
+    structureFile = open('/ihome/kjohnson/jpr54/cp2k/structureInputs/{0}_{1}.xyz'.format(structure,startNum), 'w')
+    inCount = 0
+    while inCount < fileLines:
+        structureFile.write(lines[inCount+outCount])
+        inCount = inCount + 1
+    structureFile.close()
+    startNum = startNum + 1
+    #this should cause only every 100th structure to be moved
+    outCount = outCount + fileLines*100
+
