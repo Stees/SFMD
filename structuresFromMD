@@ -27,7 +27,6 @@ lines = posFile.readlines()
 posFile.close()
 
 totalNumLines = len(lines)
-print('{0}'.format(totalNumLines))
 
 #number of lines to read?
 fileLines = atoms + 2
@@ -44,4 +43,4 @@ while outCount < totalNumLines:
     startNum = startNum + 1
     #this should cause only every 100th structure to be moved
     outCount = outCount + fileLines*100
-
+print('done\n')
