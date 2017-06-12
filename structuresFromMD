@@ -9,7 +9,7 @@ atoms = int(getAtoms.communicate()[0].split()[0])
 #get the name of the structure pair from the -pos- file
 getStructure = subprocess.Popen('ls *-pos-*', stdout=subprocess.PIPE, shell=True)
 filename = getStructure.communicate()[0].split()[0]
-structure = filename.rsplit('_',1)[0]
+structure = filename.split('_',1)[0]+'_'+filename.split('_',2)[1]
 #determine if there are any structures in the input directory with the same name that have not yet been optimized, use this in setting the start number of the structures
 checkForStructures = subprocess.Popen('ls {0}*'.format(structure), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd='/ihome/kjohnson/jpr54/cp2k/structureInputs/', shell=True)
 structuresExist = checkForStructures.communicate()[0].splitlines()
