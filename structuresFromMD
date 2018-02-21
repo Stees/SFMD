@@ -1,23 +1,34 @@
 #! /usr/bin/env python
-#code will take every 100th structure out of a cp2k -pos- file and create separate xyz files for the structures in a hard-coded input directory.
-import subprocess
+#code will take every 100th structure out of a cp2k -pos- file and create separate xyz files for the structures in a hard-coded input directory. Will work for 2 molecule AIMDs that have the form Molecule1_Molecule2_AIMD-pos-1.xyz and single molecule AIMDs that have the form Molecule1-pos-1.xyz
 
+import subprocess
 #read the number of atoms out of the pos file
 getAtoms = subprocess.Popen('head -n 1 *-pos-* | sed "s/^ *//g"', stdout=subprocess.PIPE, shell=True)
 atoms = int(getAtoms.communicate()[0].split()[0])
-#get the name of the structure pair from the -pos- file
+#get the name of the structure (pair, if there is a pair) from the -pos- file
 getStructure = subprocess.Popen('ls *-pos-*', stdout=subprocess.PIPE, shell=True)
 filename = getStructure.communicate()[0].split()[0]
-structure = filename.split('_',1)[0]+'_'+filename.split('_',2)[1]
-#determine if there are any structures in the input directory with the same name that have not yet been optimized, use this in setting the start number of the structures
+#try to get both names, this would pertain to pairs of molecules. Otherwise, there is only one molecule
+try:
+    structure = filename.split('_',1)[0]+'_'+filename.split('_',2)[1]
+    style = 'multiple'
+except:
+    structure = filename.split('-',1)[0]
+    style = 'single'
+#determine if there are any structures in the input directory with the same name that have not yet been optimized, use this in setting the start number of the structures.
 checkForStructures = subprocess.Popen('ls {0}*'.format(structure), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd='/ihome/kjohnson/jpr54/cp2k/structureInputs/', shell=True)
 structuresExist = checkForStructures.communicate()[0].splitlines()
 startNum = 1
 if 'ls: cannot access' not in structuresExist[0]:
-    #get the maximum number of the structures
-    for line in structuresExist:
-        if int(line.rsplit('_',1)[1].split('.')[0]) > startNum:
-            startNum = int(line.rsplit('_',1)[1].split('.')[0])
+    #get the maximum number of the structures in the cp2k/structureInputs directory
+    if style == 'multiple':
+        for line in structuresExist:
+            if int(line.rsplit('_',1)[1].split('.')[0]) > startNum:
+                startNum = int(line.rsplit('_',1)[1].split('.')[0])
+    elif style == 'single':
+        for line in structuresExist:
+            if int(line.split('_',1)[1].split('.')[0]) > startNum:
+                startNum = int(line.split('_',1)[1].split('.')[0])
     startNum = startNum + 1
 #read all the lines of the -pos- file
 posFile = open(filename, 'r')
